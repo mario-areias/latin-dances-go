@@ -14,3 +14,10 @@ func quarterRound(y0, y1, y2, y3 uint32) (uint32, uint32, uint32, uint32) {
 	z0 = y0 ^ (bits.RotateLeft32(z3+z2, 18))
 	return z0, z1, z2, z3
 }
+
+func rowRound(y []uint32) {
+	y[0], y[1], y[2], y[3] = quarterRound(y[0], y[1], y[2], y[3])
+	y[5], y[6], y[7], y[4] = quarterRound(y[5], y[6], y[7], y[4])
+	y[10], y[11], y[8], y[9] = quarterRound(y[10], y[11], y[8], y[9])
+	y[15], y[12], y[13], y[14] = quarterRound(y[15], y[12], y[13], y[14])
+}
