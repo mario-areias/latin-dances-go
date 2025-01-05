@@ -141,6 +141,40 @@ func TestDoubleRound(t *testing.T) {
 	}
 }
 
+func TestLittleEndian(t *testing.T) {
+	tests := []struct {
+		name string
+
+		input  []byte
+		output uint32
+	}{
+		{
+			name:   "zero",
+			input:  []byte{0, 0, 0, 0},
+			output: 0x00000000,
+		},
+		{
+			name:   "random numbers",
+			input:  []byte{86, 75, 30, 9},
+			output: 0x091e4b56,
+		},
+		{
+			name:   "almost max value",
+			input:  []byte{255, 255, 255, 250},
+			output: 0xfaffffff,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			little := littleEndian(test.input)
+			if little != test.output {
+				t.Errorf("littleEndian(%v) = %08x, want %08x", test.input, little, test.output)
+			}
+		})
+	}
+}
+
 func print(x []uint32) string {
 	s := "\n"
 	for i := 0; i < len(x); i++ {
