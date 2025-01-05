@@ -21,3 +21,10 @@ func rowRound(y []uint32) {
 	y[10], y[11], y[8], y[9] = quarterRound(y[10], y[11], y[8], y[9])
 	y[15], y[12], y[13], y[14] = quarterRound(y[15], y[12], y[13], y[14])
 }
+
+func columnRound(x []uint32) {
+	x[0], x[4], x[8], x[12] = quarterRound(x[0], x[4], x[8], x[12])
+	x[5], x[9], x[13], x[1] = quarterRound(x[5], x[9], x[13], x[1])
+	x[10], x[14], x[2], x[6] = quarterRound(x[10], x[14], x[2], x[6])
+	x[15], x[3], x[7], x[11] = quarterRound(x[15], x[3], x[7], x[11])
+}
