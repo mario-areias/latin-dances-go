@@ -2,9 +2,12 @@ package salsa
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"slices"
 	"testing"
+
+	"golang.org/x/crypto/salsa20"
 )
 
 // tests taking from https://cr.yp.to/snuffle/spec.pdf
@@ -266,6 +269,48 @@ func TestInitState(t *testing.T) {
 	if !bytes.Equal(ouput, expected) {
 		t.Errorf("initState() = %x, want %x", ouput, expected)
 	}
+}
+
+func TestEncrypt(t *testing.T) {
+	plaintext := "Trying to create a big plain text so it can test encryption with multiple blocks"
+
+	key := [32]byte{}
+	nonce := [8]byte{}
+
+	// Generate random key and nonce
+	if _, err := rand.Read(key[:]); err != nil {
+		panic(err)
+	}
+	if _, err := rand.Read(nonce[:]); err != nil {
+		panic(err)
+	}
+
+	// check if my implementation and Go's implementation encrypt the same
+	out := Encrypt(&key, nonce[:], []byte(plaintext))
+	stdout := stdSalsa(&key, nonce[:], []byte(plaintext))
+	if !bytes.Equal(out, stdout) {
+		t.Errorf("Encrypt() = %x, want %x", out, stdout)
+	}
+
+	// decrypt the message with my implementation and Go's implementation
+	p := Encrypt(&key, nonce[:], out)
+	if string(p) != plaintext {
+		t.Errorf("Decrypt() = %s, want %s", p, plaintext)
+	}
+
+	// decrypt the message with Go's implementation
+	p = stdSalsa(&key, nonce[:], out)
+	if string(p) != plaintext {
+		t.Errorf("stdSalsa() = %s, want %s", p, plaintext)
+	}
+}
+
+func stdSalsa(key *[32]byte, nonce, message []byte) []byte {
+	out := make([]byte, len(message))
+
+	salsa20.XORKeyStream(out, message, nonce, key)
+
+	return out
 }
 
 func printWords(x []uint32) string {

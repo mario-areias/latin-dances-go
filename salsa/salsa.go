@@ -1,6 +1,39 @@
 package salsa
 
-import "math/bits"
+import (
+	"math/bits"
+)
+
+func Encrypt(key *[32]byte, nonce, message []byte) []byte {
+	if len(nonce) != 8 {
+		panic("nonce must be 8 bytes")
+	}
+
+	counter := make([]byte, 8)
+	output := make([]byte, len(message))
+
+	for i := 0; i < len(message); i += 64 {
+		state := initState(key[:], append(nonce, counter...))
+		block := hash(state)
+		for j := 0; j < len(block) && i+j < len(message); j++ {
+			output[i+j] = message[i+j] ^ block[j]
+		}
+
+		incrementByteArray(counter)
+	}
+
+	return output
+}
+
+// copy from go.crypto/salsa
+func incrementByteArray(byteArray []byte) {
+	u := uint32(1)
+	for i := 0; i < len(byteArray); i++ {
+		u += uint32(byteArray[i])
+		byteArray[i] = byte(u)
+		u >>= 8
+	}
+}
 
 func quarterRound(y0, y1, y2, y3 uint32) (uint32, uint32, uint32, uint32) {
 	var z0, z1, z2, z3 uint32
@@ -79,5 +112,4 @@ func initState(key, nonce []byte) []byte {
 	copy(state[44:60], key[16:])
 	copy(state[60:64], []byte{116, 101, 32, 107})
 	return state
-
 }
