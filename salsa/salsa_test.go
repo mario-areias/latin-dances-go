@@ -53,7 +53,7 @@ func TestRowRound(t *testing.T) {
 		0x00000001, 0x00000200, 0x00402000, 0x88000100}
 
 	if !slices.Equal(y, expected) {
-		t.Errorf("rowRound() = %s, want %s", print(y), print(expected))
+		t.Errorf("rowRound() = %s, want %s", printWords(y), printWords(expected))
 	}
 
 	y = []uint32{0x08521bd6, 0x1fe88837, 0xbb2aa576, 0x3aa26365,
@@ -69,7 +69,7 @@ func TestRowRound(t *testing.T) {
 		0x0040ede5, 0xb545fbce, 0xd257ed4f, 0x1818882d}
 
 	if !slices.Equal(y, expected) {
-		t.Errorf("rowRound() = %s, want %s", print(y), print(expected))
+		t.Errorf("rowRound() = %s, want %s", printWords(y), printWords(expected))
 	}
 }
 
@@ -87,7 +87,7 @@ func TestColumnRound(t *testing.T) {
 		0x40a04001, 0x00000000, 0x00000000, 0x00000000}
 
 	if !slices.Equal(x, expected) {
-		t.Errorf("columnRound() = %s, want %s", print(x), print(expected))
+		t.Errorf("columnRound() = %s, want %s", printWords(x), printWords(expected))
 	}
 
 	x = []uint32{0x08521bd6, 0x1fe88837, 0xbb2aa576, 0x3aa26365,
@@ -103,7 +103,7 @@ func TestColumnRound(t *testing.T) {
 		0x481c2027, 0x53a8e4b5, 0x4c1f89c5, 0x3f78c9c8}
 
 	if !slices.Equal(x, expected) {
-		t.Errorf("columnRound() = %s, want %s", print(x), print(expected))
+		t.Errorf("columnRound() = %s, want %s", printWords(x), printWords(expected))
 	}
 }
 
@@ -121,7 +121,7 @@ func TestDoubleRound(t *testing.T) {
 		0x20500000, 0xa0000040, 0x0008180a, 0x612a8020}
 
 	if !slices.Equal(x, expected) {
-		t.Errorf("doubleRound() = %s, want %s", print(x), print(expected))
+		t.Errorf("doubleRound() = %s, want %s", printWords(x), printWords(expected))
 	}
 
 	x = []uint32{0xde501066, 0x6f9eb8f7, 0xe4fbbd9b, 0x454e3f57,
@@ -138,7 +138,7 @@ func TestDoubleRound(t *testing.T) {
 		0xa74b2ad6, 0xbc331c5c, 0x1dda24c7, 0xee928277}
 
 	if !slices.Equal(x, expected) {
-		t.Errorf("doubleRound() = %s, want %s", print(x), print(expected))
+		t.Errorf("doubleRound() = %s, want %s", printWords(x), printWords(expected))
 	}
 }
 
@@ -248,7 +248,27 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func print(x []uint32) string {
+func TestInitState(t *testing.T) {
+	k0 := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	k1 := []byte{201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216}
+
+	n := []byte{101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116}
+
+	expected := []byte{
+		69, 37, 68, 39, 41, 15, 107, 193, 255, 139, 122, 6, 170, 233, 217, 98,
+		89, 144, 182, 106, 21, 51, 200, 65, 239, 49, 222, 34, 215, 114, 40, 126,
+		104, 197, 7, 225, 197, 153, 31, 2, 102, 78, 76, 176, 84, 245, 246, 184,
+		177, 160, 133, 130, 6, 72, 149, 119, 192, 195, 132, 236, 234, 103, 246, 74,
+	}
+
+	ouput := hash(initState(append(k0, k1...), n))
+
+	if !bytes.Equal(ouput, expected) {
+		t.Errorf("initState() = %x, want %x", ouput, expected)
+	}
+}
+
+func printWords(x []uint32) string {
 	s := "\n"
 	for i := 0; i < len(x); i++ {
 		s += fmt.Sprintf("%08x, ", x[i])

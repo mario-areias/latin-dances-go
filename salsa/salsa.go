@@ -68,3 +68,16 @@ func hash(input []byte) []byte {
 
 	return output
 }
+
+func initState(key, nonce []byte) []byte {
+	state := make([]byte, 64)
+	copy(state[0:4], []byte{101, 120, 112, 97})
+	copy(state[4:20], key[0:16])
+	copy(state[20:24], []byte{110, 100, 32, 51})
+	copy(state[24:40], nonce)
+	copy(state[40:44], []byte{50, 45, 98, 121})
+	copy(state[44:60], key[16:])
+	copy(state[60:64], []byte{116, 101, 32, 107})
+	return state
+
+}
