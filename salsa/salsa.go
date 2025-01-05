@@ -28,3 +28,8 @@ func columnRound(x []uint32) {
 	x[10], x[14], x[2], x[6] = quarterRound(x[10], x[14], x[2], x[6])
 	x[15], x[3], x[7], x[11] = quarterRound(x[15], x[3], x[7], x[11])
 }
+
+func doubleRound(x []uint32) {
+	columnRound(x)
+	rowRound(x)
+}
