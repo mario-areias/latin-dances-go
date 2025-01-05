@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// tests taking from https://weaversa.github.io/cryptol-course/labs/Salsa20/Salsa20Spec.pdf
+// tests taking from https://cr.yp.to/snuffle/spec.pdf
 func TestQuarterRound(t *testing.T) {
 	x0, x1, x2, x3 := quarterRound(0x00000000, 0x00000000, 0x00000000, 0x00000000)
 	if x0 != 0x00000000 || x1 != 0x00000000 || x2 != 0x00000000 || x3 != 0x00000000 {
