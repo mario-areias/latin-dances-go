@@ -37,3 +37,34 @@ func doubleRound(x []uint32) {
 func littleEndian(b []byte) uint32 {
 	return uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24
 }
+
+func hash(input []byte) []byte {
+	// transform bytes in words
+	x := make([]uint32, 16)
+	for i := 0; i < 16; i++ {
+		x[i] = littleEndian(input[i*4 : i*4+4])
+	}
+
+	// calculate 10 double rounds
+	z := make([]uint32, 16)
+	copy(z, x)
+	for i := 0; i < 10; i++ {
+		doubleRound(z)
+	}
+
+	// concatenate the result
+	for i := 0; i < 16; i++ {
+		z[i] += x[i]
+	}
+
+	// transform words in bytes
+	output := make([]byte, 64)
+	for i := 0; i < 16; i++ {
+		output[i*4] = byte(z[i])
+		output[i*4+1] = byte(z[i] >> 8)
+		output[i*4+2] = byte(z[i] >> 16)
+		output[i*4+3] = byte(z[i] >> 24)
+	}
+
+	return output
+}
