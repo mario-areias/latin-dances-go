@@ -6,6 +6,55 @@ import (
 	"math/bits"
 )
 
+func Encrypt(key [32]byte, nonce [12]byte, message []byte) []byte {
+	counter := uint32(1)
+
+	result := make([]byte, len(message))
+	for i := 0; len(message) >= 64; i += 64 {
+		end := i + 64
+
+		copy(result[i:end], encrypt(key, nonce, counter, message[:64]))
+		counter++
+
+		message = message[64:]
+	}
+
+	if len(message) > 0 {
+		i := len(result) - len(message)
+		end := i + len(message)
+
+		copy(result[i:end], encrypt(key, nonce, counter, message))
+	}
+
+	return result
+}
+
+func encrypt(key [32]byte, nonce [12]byte, counter uint32, message []byte) []byte {
+	result := make([]byte, len(message))
+
+	stream := block(key, counter, nonce)
+	s := wordsToBytes(stream)
+
+	for i, b := range message {
+		result[i] = b ^ s[i]
+	}
+
+	return result
+}
+
+func wordsToBytes(w []uint32) []byte {
+	writer := new(bytes.Buffer)
+
+	// Write each uint32 to the buffer
+	for _, num := range w {
+		if err := binary.Write(writer, binary.LittleEndian, num); err != nil {
+			panic(err)
+		}
+	}
+
+	return writer.Bytes()
+}
+
 func quarterRound(a, b, c, d uint32) (uint32, uint32, uint32, uint32) {
 	a += b
 	d ^= a
@@ -26,7 +75,7 @@ func quarterRound(a, b, c, d uint32) (uint32, uint32, uint32, uint32) {
 	return a, b, c, d
 }
 
-func initState(key [32]byte, count [4]byte, nonce [12]byte) []uint32 {
+func initState(key [32]byte, counter uint32, nonce [12]byte) []uint32 {
 	var w1, w2, w3, w4 uint32
 	w1 = 0x61707865
 	w2 = 0x3320646e
@@ -40,7 +89,7 @@ func initState(key [32]byte, count [4]byte, nonce [12]byte) []uint32 {
 	s[3] = w4
 
 	copy(s[4:12], bytesToWords(key[:]))
-	copy(s[12:13], bytesToWords(count[:]))
+	s[12] = counter
 	copy(s[13:16], bytesToWords(nonce[:]))
 
 	return s
@@ -57,7 +106,7 @@ func bytesToWords(b []byte) []uint32 {
 	return w
 }
 
-func block(key [32]byte, counter [4]byte, nonce [12]byte) []uint32 {
+func block(key [32]byte, counter uint32, nonce [12]byte) []uint32 {
 	initState := initState(key, counter, nonce)
 	state := make([]uint32, 16)
 	copy(state, initState)
