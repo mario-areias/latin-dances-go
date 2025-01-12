@@ -3,6 +3,7 @@ package chacha
 import (
 	"bytes"
 	"encoding/binary"
+	"math/big"
 	"math/bits"
 )
 
@@ -131,4 +132,124 @@ func innerBlock(state []uint32) {
 	state[1], state[6], state[11], state[12] = quarterRound(state[1], state[6], state[11], state[12])
 	state[2], state[7], state[8], state[13] = quarterRound(state[2], state[7], state[8], state[13])
 	state[3], state[4], state[9], state[14] = quarterRound(state[3], state[4], state[9], state[14])
+}
+
+func poly1305Mac(msg []byte, key [32]byte) []byte {
+	r := key[0:16]
+	s := key[16:32]
+	clamp(r)
+
+	// Big int is non-performatic, but it is easier to deal than handle []uint64.
+	var a big.Int
+
+	sn := littleEndiaBytesToBigInt(s[:])
+	// fmt.Printf("sn: %08x\n", sn.Bytes())
+	rn := littleEndiaBytesToBigInt(r[:])
+	// fmt.Printf("rn: %08x\n", rn.Bytes())
+
+	p := constantPrime()
+
+	for len(msg) >= 16 {
+		block := make([]byte, 16)
+		copy(block, msg[:16])
+
+		// fmt.Printf("Accumulator: %08x\n", a.Bytes())
+		// fmt.Printf("Block: %08x\n", block)
+
+		t := append(block, 0x01)
+		// fmt.Printf("Block with 0x01: %08x\n", t)
+
+		n := littleEndiaBytesToBigInt(t)
+		a.Add(&a, &n)
+		// fmt.Printf("Accumulator + Block: %8x\n", a.Bytes())
+
+		a.Mul(&a, &rn)
+		// fmt.Printf("Accumulator + Block * rn: %8x\n", a.Bytes())
+
+		a.Mod(&a, p)
+		// fmt.Printf("Accumulator + Block * rn mod p: %8x\n", a.Bytes())
+
+		msg = msg[16:]
+	}
+
+	if len(msg) > 0 {
+		block := make([]byte, len(msg))
+		copy(block, msg)
+
+		// fmt.Printf("Accumulator: %08x\n", a.Bytes())
+		// fmt.Printf("Block: %08x\n", block)
+
+		t := append(block, 0x01)
+		// fmt.Printf("Block with 0x01: %08x\n", t)
+
+		n := littleEndiaBytesToBigInt(t)
+
+		a.Add(&a, &n)
+		// fmt.Printf("Accumulator + Block: %8x\n", a.Bytes())
+
+		a.Mul(&a, &rn)
+		// fmt.Printf("Accumulator + Block * rn: %8x\n", a.Bytes())
+
+		a.Mod(&a, p)
+		// fmt.Printf("Accumulator + Block * rn mod p: %8x\n", a.Bytes())
+	}
+
+	a.Add(&a, &sn)
+	// fmt.Printf("Accumulator + s: %8x\n", a.Bytes())
+
+	b := make([]byte, len(a.Bytes()))
+	copy(b, a.Bytes())
+	bigToLitleEndian(b)
+
+	return b[:16]
+}
+
+func clamp(r []byte) []byte {
+	r[3] &= 15
+	r[7] &= 15
+	r[11] &= 15
+	r[15] &= 15
+	r[4] &= 252
+	r[8] &= 252
+	r[12] &= 252
+
+	return r
+}
+
+func uint64ToBytes(u uint64) []byte {
+	buffer := new(bytes.Buffer)
+
+	if err := binary.Write(buffer, binary.LittleEndian, u); err != nil {
+		panic(err)
+	}
+
+	return buffer.Bytes()
+}
+
+func littleEndiaBytesToBigInt(b []byte) big.Int {
+	// bloody go only accepts big endian bytes to add to big int.
+	bigToLitleEndian(b)
+
+	var n big.Int
+	n.SetBytes(b)
+	return n
+}
+
+func bigToLitleEndian(b []byte) {
+	i := 0
+	j := len(b) - 1
+
+	for i < j {
+		b[i], b[j] = b[j], b[i]
+		i++
+		j--
+	}
+}
+
+func constantPrime() *big.Int {
+	bigInt := new(big.Int)
+	bigInt.Lsh(bigInt.SetInt64(1), 130)
+	bigInt.Sub(bigInt, big.NewInt(5))
+
+	return bigInt
 }
