@@ -30,6 +30,29 @@ func Encrypt(key [32]byte, nonce [12]byte, message []byte) []byte {
 	return result
 }
 
+func EncryptAED(key [32]byte, nonce [12]byte, message, aad []byte) ([]byte, []byte) {
+	polyKey := poly1305KeyGen(key, nonce)
+	cipher := Encrypt(key, nonce, message)
+
+	paddedAad := append(aad, padding(aad)...)
+	paddedCipher := append(cipher, padding(cipher)...)
+
+	macData := append(paddedAad, paddedCipher...)
+
+	lengthAad := make([]byte, 8)
+	lengthCipher := make([]byte, 8)
+
+	binary.LittleEndian.PutUint64(lengthAad, uint64(len(aad)))
+	binary.LittleEndian.PutUint64(lengthCipher, uint64(len(cipher)))
+
+	macData = append(macData, lengthAad...)
+	macData = append(macData, lengthCipher...)
+
+	tag := poly1305Mac(macData, [32]byte(polyKey))
+
+	return cipher, tag
+}
+
 func encrypt(key [32]byte, nonce [12]byte, counter uint32, message []byte) []byte {
 	result := make([]byte, len(message))
 

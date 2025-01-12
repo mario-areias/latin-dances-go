@@ -1,6 +1,9 @@
 package chacha
 
-import "math/big"
+import (
+	"bytes"
+	"math/big"
+)
 
 func poly1305Mac(msg []byte, key [32]byte) []byte {
 	r := key[0:16]
@@ -78,4 +81,14 @@ func poly1305KeyGen(key [32]byte, nonce [12]byte) []byte {
 	stream := wordsToBytes(block)
 
 	return stream[0:32]
+}
+
+func padding(msg []byte) []byte {
+	i := len(msg) % 16
+
+	if i == 0 {
+		return nil
+	}
+
+	return bytes.Repeat([]byte{0x00}, 16-i)
 }
