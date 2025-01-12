@@ -1,0 +1,38 @@
+package chacha
+
+import (
+	"fmt"
+	"slices"
+	"testing"
+)
+
+func TestPoly1305Mac(t *testing.T) {
+	// 85:d6:be:78:57:55:6d:33:7f:44:52:fe:42:d5:06:a8:01:0
+	// 3:80:8a:fb:0d:b2:fd:4a:bf:f6:af:41:49:f5:1b
+	key := [32]byte{0x85, 0xd6, 0xbe, 0x78, 0x57, 0x55, 0x6d, 0x33,
+		0x7f, 0x44, 0x52, 0xfe, 0x42, 0xd5, 0x06, 0xa8,
+		0x01, 0x03, 0x80, 0x8a, 0xfb, 0x0d, 0xb2, 0xfd,
+		0x4a, 0xbf, 0xf6, 0xaf, 0x41, 0x49, 0xf5, 0x1b}
+
+	msg := "Cryptographic Forum Research Group"
+
+	expected := []byte{0xa8, 0x06, 0x1d, 0xc1, 0x30, 0x51, 0x36, 0xc6, 0xc2, 0x2b, 0x8b, 0xaf, 0x0c, 0x01, 0x27, 0xa9}
+
+	tag := poly1305Mac([]byte(msg), key)
+
+	if !slices.Equal(tag, expected) {
+		t.Errorf("Poly1305Mac tag: expected %s, tag %s", printBytes(expected), printBytes(tag))
+	}
+}
+
+func printBytes(b []byte) string {
+	s := ""
+	for i := 0; i < len(b); i++ {
+		s += fmt.Sprintf("%x ", b[i])
+		if (i+1)%16 == 0 {
+			s += "\n"
+		}
+	}
+	s += "\n"
+	return s
+}
