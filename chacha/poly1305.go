@@ -10,7 +10,7 @@ func poly1305Mac(msg []byte, key [32]byte) []byte {
 	s := key[16:32]
 	clamp(r)
 
-	// Big int is non-performatic, but it is easier to deal than handle []uint64.
+	// Big int is non-performatic _and_ vulnerable to side attacks, but it is easier to deal than handle []uint64.
 	var a big.Int
 
 	sn := littleEndiaBytesToBigInt(s[:])
