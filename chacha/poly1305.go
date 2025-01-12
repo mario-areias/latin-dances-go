@@ -71,3 +71,11 @@ func poly1305Mac(msg []byte, key [32]byte) []byte {
 
 	return b[:16]
 }
+
+func poly1305KeyGen(key [32]byte, nonce [12]byte) []byte {
+	var counter uint32
+	block := block(key, counter, nonce)
+	stream := wordsToBytes(block)
+
+	return stream[0:32]
+}
