@@ -3,6 +3,7 @@ package chacha
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"math/big"
 	"math/bits"
 )
@@ -34,6 +35,13 @@ func EncryptAED(key [32]byte, nonce [12]byte, message, aad []byte) ([]byte, []by
 	polyKey := poly1305KeyGen(key, nonce)
 	cipher := Encrypt(key, nonce, message)
 
+	macData := mac(cipher, aad)
+	tag := poly1305Mac(macData, [32]byte(polyKey))
+
+	return cipher, tag
+}
+
+func mac(cipher, aad []byte) []byte {
 	paddedAad := append(aad, padding(aad)...)
 	paddedCipher := append(cipher, padding(cipher)...)
 
@@ -48,9 +56,21 @@ func EncryptAED(key [32]byte, nonce [12]byte, message, aad []byte) ([]byte, []by
 	macData = append(macData, lengthAad...)
 	macData = append(macData, lengthCipher...)
 
-	tag := poly1305Mac(macData, [32]byte(polyKey))
+	return macData
+}
 
-	return cipher, tag
+func DecryptAED(key [32]byte, nonce [12]byte, cipher, tag, aad []byte) ([]byte, error) {
+	polyKey := poly1305KeyGen(key, nonce)
+	message := Encrypt(key, nonce, cipher)
+
+	macData := mac(cipher, aad)
+	calculateTag := poly1305Mac(macData, [32]byte(polyKey))
+
+	if !bytes.Equal(calculateTag, tag) {
+		return nil, errors.New("invalid tag")
+	}
+
+	return message, nil
 }
 
 func encrypt(key [32]byte, nonce [12]byte, counter uint32, message []byte) []byte {

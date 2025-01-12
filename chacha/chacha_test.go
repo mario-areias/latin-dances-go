@@ -156,11 +156,20 @@ func TestEncryptAED(t *testing.T) {
 	cipher, tag := EncryptAED(key, nonce, []byte(plaintext), aad)
 
 	if !slices.Equal(cipher, expectedCipher) {
-		t.Errorf("EncryptAED: Expected %x, got %x", expectedCipher, cipher)
+		t.Errorf("EncryptAED cipher: Expected %x, got %x", expectedCipher, cipher)
 	}
 
 	if !slices.Equal(tag, expectedTag) {
-		t.Errorf("EncryptAED: Expected %x, got %x", expectedTag, tag)
+		t.Errorf("EncryptAED tag: Expected %x, got %x", expectedTag, tag)
+	}
+
+	message, err := DecryptAED(key, nonce, cipher, tag, aad)
+	if err != nil {
+		t.Errorf("DecryptAED: %s", err)
+	}
+
+	if !slices.Equal(message, []byte(plaintext)) {
+		t.Errorf("DecryptAED: Expected %s, got %s", plaintext, message)
 	}
 }
 
